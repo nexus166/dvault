@@ -1,11 +1,11 @@
-#
+FROM	node:10-alpine AS nodejs
 
 FROM	nexus166/gobld:alpine-cgo
-
-RUN	apk add --update --upgrade --no-cache ca-certificates bash binutils file git gcc npm libc-dev libstdc++ make python zip; \
+COPY	--from=nodejs /usr/local /usr/local
+RUN	apk add --update --upgrade --no-cache ca-certificates bash binutils file git gcc libc-dev libstdc++ make python zip; \
 	npm config set unsafe-perm true; \
-	npm install -g yarn@1.17.3
-
+	rm -fv /usr/local/bin/yarn*; \
+	npm install -g --force yarn@1.17.3
 SHELL   ["/bin/bash", "-evxo", "pipefail", "-c"]
 
 ARG     USR="vault"
@@ -16,10 +16,17 @@ RUN     addgroup -S "${USR}"; \
 
 USER	"${USR}"
 
-RUN	go get -d -v github.com/hashicorp/vault
-
 ARG	VAULT_GIT_TAG
-RUN	[[ ! -z "${VAULT_GIT_TAG}" ]] && (cd "${GOPATH}/src/github.com/hashicorp/vault" && git checkout "tags/${VAULT_GIT_TAG}") || true
+RUN	if [[ -z "${VAULT_GIT_TAG}" ]]; then \
+		go get -d -u -v github.com/hashicorp/vault; \
+	else \
+		mkdir -vp "${GOPATH}/src/github.com/hashicorp/vault"; \
+		git clone --branch "${VAULT_GIT_TAG}" --depth 1 https://github.com/hashicorp/vault.git "${GOPATH}/src/github.com/hashicorp/vault"; \
+	fi; \
+	set +x; \
+	for f in $(find "${GOPATH}/src/github.com/hashicorp/vault" -type f -name '*.go' -o -name '*.mod' -o -name '*.sum'); do \
+		sed -i 's|git.apache.org/thrift|github.com/apache/thrift|g' "${f}"; \
+	done
 
 WORKDIR	"${GOPATH}/src/github.com/hashicorp/vault"
 
@@ -33,7 +40,7 @@ ARG	XC_OS
 ARG	XC_OSARCH
 ENV	XC_OSARCH=${XC_OSARCH:-"${XC_OS}/${XC_ARCH}"}
 ENV	GO_LDFLAGS="-s -w "
-#ENV	GO_GCFLAGS=all="-d softfloat"
+#ENV	GO_GCFLAGS=all="-d softfloat" # mipsle targets
 ENV	GOARM=7
 
 RUN	export \
