@@ -1,11 +1,12 @@
 FROM	node:10-alpine AS nodejs
 
-FROM	nexus166/gobld:alpine-cgo
+FROM	nexus166/gobld:latest
 COPY	--from=nodejs /usr/local /usr/local
 RUN	apk add --update --upgrade --no-cache ca-certificates bash binutils file git gcc libc-dev libstdc++ make python zip; \
 	npm config set unsafe-perm true; \
 	rm -fv /usr/local/bin/yarn*; \
-	npm install -g --force yarn@1.17.3
+	npm install -g --force yarn@1.19.1
+
 SHELL   ["/bin/bash", "-evxo", "pipefail", "-c"]
 
 ARG     USR="vault"
@@ -39,8 +40,7 @@ ARG	XC_ARCH
 ARG	XC_OS
 ARG	XC_OSARCH
 ENV	XC_OSARCH=${XC_OSARCH:-"${XC_OS}/${XC_ARCH}"}
-ENV	GO_LDFLAGS="-s -w "
-#ENV	GO_GCFLAGS=all="-d softfloat" # mipsle targets
+ENV	GO_LDFLAGS="-s -w -extldflags=-static "
 ENV	GOARM=7
 
 RUN	export \

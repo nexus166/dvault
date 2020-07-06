@@ -1,4 +1,4 @@
-FROM	nexus166/dvault:stage1
+FROM	nexus166/vault:stage1
 FROM	scratch
 
 ARG	USR="vault"

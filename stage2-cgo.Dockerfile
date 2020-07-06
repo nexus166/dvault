@@ -1,4 +1,4 @@
-FROM	nexus166/dvault:stage1-cgo
+FROM	nexus166/vault:stage1-cgo
 FROM	alpine
 
 RUN	mkdir -vp /lib64; \
