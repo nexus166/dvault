@@ -1,11 +1,11 @@
-FROM	node:10-alpine AS nodejs
+FROM	node:14-alpine AS nodejs
 
-FROM	nexus166/gobld:latest
+FROM	nexus166/gobld:alpine_go1.16.8
 COPY	--from=nodejs /usr/local /usr/local
-RUN	apk add --update --upgrade --no-cache ca-certificates bash binutils file git gcc libc-dev libstdc++ make python zip; \
+RUN	apk add --update --upgrade --no-cache ca-certificates bash binutils file git gcc libc-dev libstdc++ make py3-pip zip; \
 	npm config set unsafe-perm true; \
 	rm -fv /usr/local/bin/yarn*; \
-	npm install -g --force yarn@1.19.1
+	npm install -g --force yarn
 
 SHELL   ["/bin/bash", "-evxo", "pipefail", "-c"]
 
@@ -23,16 +23,12 @@ RUN	if [[ -z "${VAULT_GIT_TAG}" ]]; then \
 	else \
 		mkdir -vp "${GOPATH}/src/github.com/hashicorp/vault"; \
 		git clone --branch "${VAULT_GIT_TAG}" --depth 1 https://github.com/hashicorp/vault.git "${GOPATH}/src/github.com/hashicorp/vault"; \
-	fi; \
-	set +x; \
-	for f in $(find "${GOPATH}/src/github.com/hashicorp/vault" -type f -name '*.go' -o -name '*.mod' -o -name '*.sum'); do \
-		sed -i 's|git.apache.org/thrift|github.com/apache/thrift|g' "${f}"; \
-	done
+	fi
 
 WORKDIR	"${GOPATH}/src/github.com/hashicorp/vault"
 
 RUN	make bootstrap
-
+RUN	cd ui && npx browserslist@latest --update-db
 RUN	make static-dist
 
 ARG	CGO_ENABLED=0
