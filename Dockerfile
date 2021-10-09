@@ -27,8 +27,7 @@ RUN	if [[ -z "${VAULT_GIT_TAG}" ]]; then \
 
 WORKDIR	"${GOPATH}/src/github.com/hashicorp/vault"
 
-RUN	go mod tidy; \
-	make bootstrap; \
+RUN	make bootstrap; \
 	cd ui && npx browserslist@latest --update-db
 RUN	make static-dist
 
