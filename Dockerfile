@@ -1,6 +1,6 @@
 FROM	node:14-alpine AS nodejs
 
-FROM	nexus166/gobld:alpine_go1.16.8 AS buildenv
+FROM	nexus166/gobld:alpine AS buildenv
 COPY	--from=nodejs /usr/local /usr/local
 RUN	apk add --update --upgrade --no-cache ca-certificates bash binutils file git gcc libc-dev libstdc++ make py3-pip upx zip; \
 	npm config set unsafe-perm true; \
@@ -38,7 +38,7 @@ ARG	XC_OSARCH
 ENV	XC_OSARCH=${XC_OSARCH:-"${XC_OS}/${XC_ARCH}"}
 ENV	GO_LDFLAGS="-s -w -extldflags=-static "
 ENV	GOARM=7
-ARG	UPX=0
+ARG	USE_UPX=0
 
 RUN	export \
 		GCFLAGS="${GO_GCFLAGS}" \
@@ -53,11 +53,10 @@ RUN	export \
 	_v="$(which vault)"; \
 	file "${_v}"; \
 	du -sh "${_v}"; \
-	if [[ ${UPX} != 0 ]]; then \
+	if [[ ${USE_UPX} != "0" ]]; then \
 		upx -9 "${_v}"; \
 		du -sh "${_v}"; \
-	fi; \
-	vault version
+	fi
 
 FROM	scratch
 ARG	USR="vault"
